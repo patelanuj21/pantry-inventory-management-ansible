@@ -1,0 +1,21 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+  - name: create ansible user
+    user:
+      name: ansible
+  
+  - name: publish master ssh key to all hosts
+    ansible.posix.authorized_key:
+      user: ansible
+      state: present
+      key: "{{ lookup('file', '/home/ansible/.ssh/ansible.pub')  }}"
+
+  - name: add ansible user to the sudoers group
+    lineinfile:
+      path: /etc/sudoers
+      state: present
+      regexp: '^ansible ALL='
+      line: 'ansible ALL=(ALL) NOPASSWD: ALL'
+      validate: '/usr/sbin/visudo -cf %s'

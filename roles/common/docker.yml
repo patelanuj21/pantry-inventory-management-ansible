@@ -1,0 +1,34 @@
+---
+- hosts: all
+  become: yes
+  tasks:
+  - name: install docker
+    package:
+      name: "{{ packages }}"
+      state: present
+    vars:
+      packages:
+      - docker
+
+  - name: start and enable docker
+    service: 
+      name: docker
+      state: started
+      enabled: yes
+
+  - name: add {{ lookup('env','USER') }} to the docker group
+    shell: "usermod -aG docker {{ lookup('env','USER') }}"
+
+  - name: install python package manager
+    package: 
+      name: python3-pip
+      state: present
+
+  - name: install python sdk
+    become_user: "{{ lookup('env','USER') }}"
+    pip:
+      name:
+      - docker
+      - docker-compose
+      executable: pip3
+

@@ -1,0 +1,9 @@
+---
+# nonsensitive data
+db_host: "mysql"
+db_name: "pantry"
+db_username: "root"
+db_port: "3306"
+
+# sensitive data
+db_password: "{{ vault_db_password }}"

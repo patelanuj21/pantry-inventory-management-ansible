@@ -1,0 +1,64 @@
+---
+- hosts: master
+  vars:
+  - ansible_python_interpreter: /usr/bin/python3
+  vars_files:
+  - /home/$USER/inventories/pantry/group_vars/database/vars
+  - /home/$USER/inventories/pantry/group_vars/database/vault
+
+  tasks:
+
+  - name: remove the pantry containers
+    community.docker.docker_container:
+      name: pantry
+      state: absent
+
+  - name: remove the pantry container image
+    community.docker.docker_image:
+      name: patanuj21/pantry-inventory-management
+      state: absent
+      force_absent: yes
+    
+  - name: pull the latest pantry docker image
+    community.docker.docker_image:
+      name: patanuj21/pantry-inventory-management:latest
+      state: present
+      source: pull
+      force_source: yes
+
+  - name: create network
+    community.docker.docker_network:
+      name: pantry
+
+  - name: deploy mysql db
+    community.docker.docker_container:
+      name: mysql
+      image: mysql/mysql-server:8.0
+      ports:
+      - 3306:3306
+      networks:
+      - name: pantry
+      volumes:
+      - db:/var/lib/mysql
+      - /home/ansible/roles/pantry_app/files/db_dumps:/docker-entrypoint-initdb.d/
+      env:
+        MYSQL_DATABASE: "{{ db_name }}"
+        MYSQL_ROOT_PASSWORD: "{{ db_password }}"
+        MYSQL_ROOT_HOST: "%"
+      restart_policy : always
+
+  - name: deploy the latest pantry app
+    community.docker.docker_container:
+      name: pantry
+      image: patanuj21/pantry-inventory-management:latest
+      ports:
+      - 5000:5000
+      networks:
+      - name: pantry
+      env: 
+        DB_HOST: "{{ db_host }}"
+        DB_NAME: "{{ db_name }}"
+        DB_USERNAME: "{{ db_username }}"
+        DB_PASSWORD: "{{ db_password }}"
+        DB_PORT: "{{ db_port }}"
+      restart_policy : unless-stopped
