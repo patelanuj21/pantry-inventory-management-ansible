@@ -11,7 +11,7 @@
   - name: Add the "wheel" sudoers.d file for passwordless sudo
     lineinfile:
       path: /etc/sudoers.d/wheel
-      line: 'wheel ALL=(ALL) NOPASSWD: ALL'
+      line: '%wheel ALL=(ALL) NOPASSWD: ALL'
       state: present
       mode: 0440
       create: yes
