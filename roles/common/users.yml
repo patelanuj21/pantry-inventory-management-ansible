@@ -2,20 +2,63 @@
 - hosts: all
   become: yes
   tasks:
-  - name: create ansible user
+
+  - name: Make sure we have a 'wheel' group
+    group:
+      name: wheel
+      state: present
+  
+  - name: Add the "wheel" sudoers.d file for passwordless sudo
+    lineinfile:
+      path: /etc/sudoers.d/wheel
+      line: 'wheel ALL=(ALL) NOPASSWD: ALL'
+      state: present
+      mode: 0440
+      create: yes
+      validate: 'visudo -cf %s' 
+   
+  - name: Add the "ansible" user to "wheel" group
     user:
       name: ansible
-  
-  - name: publish master ssh key to all hosts
+      groups: wheel
+      append: yes
+      state: present
+      createhome: yes
+
+- hosts: master
+  become: yes
+  tasks:
+
+  - name: Publish masters SSH key to all nodes
     ansible.posix.authorized_key:
       user: ansible
       state: present
       key: "{{ lookup('file', '/home/ansible/.ssh/ansible.pub')  }}"
 
-  - name: add ansible user to the sudoers group
-    lineinfile:
-      path: /etc/sudoers
-      state: present
-      regexp: '^ansible ALL='
-      line: 'ansible ALL=(ALL) NOPASSWD: ALL'
-      validate: '/usr/sbin/visudo -cf %s'
+#   - name: add ansible user to the sudoers group
+#     lineinfile:
+#       path: /etc/sudoers
+#       state: present
+#       regexp: '^ansible ALL='
+#       line: 'ansible ALL=(ALL) NOPASSWD: ALL'
+#       validate: '/usr/sbin/visudo -cf %s'
+
+#   - name: Add the "wheel" sudoers.d file
+#     lineinfile:
+#       path: /etc/sudoers.d/wheel
+#       line: 'wheel ALL=(ALL) NOPASSWD: ALL'
+#       state: present
+#       mode: 0440
+#       create: yes
+#       validate: 'visudo -cf %s'      
+      
+
+
+#   - name: Add ansible users to wheel group
+#     user:
+#       name: ansible
+#       groups: wheel
+#       append: yes
+#       state: present
+#       createhome: yes
+    
